@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <!-- ... (rest of the head section remains the same) -->
+</head>
+<body>
+    <div id="gameContainer"></div>
+    <div id="loader">
+        <!-- ... (rest of the loader div remains the same) -->
+    </div>
+    <script src='Build/kongregate_api.js'></script>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        // Storage functions
+        function saveProgress() {
+            const progressData = {
+                score: playerScore,
+                level: currentLevel,
+                character: {
+                    health: playerHealth,
+                    strength: playerStrength,
+                    inventory: playerInventory
+                },
+                gameState: {
+                    position: playerPosition,
+                    health: playerHealth
+                }
+            };
+            localStorage.setItem('gameProgress', JSON.stringify(progressData));
+        }
+
+        function loadProgress() {
+            const storedProgress = localStorage.getItem('gameProgress');
+            if (storedProgress) {
+                const progressData = JSON.parse(storedProgress);
+                playerScore = progressData.score;
+                currentLevel = progressData.level;
+                playerHealth = progressData.character.health;
+                playerStrength = progressData.character.strength;
+                playerInventory = progressData.character.inventory;
+                playerPosition = progressData.gameState.position;
+                // Restore game state based on loaded data
+            }
+        }
+
+        // Initialize game progress data
+        let playerScore = 0;
+        let currentLevel = 1;
+        let playerHealth = 100;
+        let playerStrength = 10;
+        let playerInventory = [];
+        let playerPosition = { x: 0, y: 0 };
+
+        // Call loadProgress when the game starts
+        loadProgress();
+
+        // Call saveProgress every 5 seconds
+        setInterval(saveProgress, 5000);
+
+        // Call saveProgress when the player completes a level
+        function levelCompleted() {
+            saveProgress();
+        }
+
+        // Call saveProgress when the player earns points
+        function pointsEarned() {
+            saveProgress();
+        }
+
+        // Call saveProgress when the player reaches a checkpoint
+        function checkpointReached() {
+            saveProgress();
+        }
+
+        // Modify the UnityProgress function to use the storage code
+        function UnityProgress(gameInstance, progress) {
+            if (!gameInstance.Module) {
+                return;
+            }
+            const loader = document.querySelector("#loader");
+            if (!gameInstance.progress) {
+                const progressElement = document.querySelector("#loader .progress");
+                progressElement.style.display = "block";
+                gameInstance.progress = progressElement.querySelector(".full");
+                loader.querySelector(".spinner").style.display = "none";
+            }
+            gameInstance.progress.style.transform = `scaleX(${progress})`;
+            if (progress === 1 && !gameInstance.removeTimeout) {
+                loader.style.display = "none";
+                // Save game progress when the game is fully loaded
+                saveProgress();
+            }
+        }
+
+        var gameInstance = UnityLoader.instantiate("gameContainer", "Build/Web.json", {onProgress: UnityProgress});
+    </script>
+</body>
+</html>
